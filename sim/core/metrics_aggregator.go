@@ -81,7 +81,7 @@ func NewDistributionMetrics() DistributionMetrics {
 }
 
 type UnitMetrics struct {
-	dps    DistributionMetrics
+	Dps    DistributionMetrics
 	dpasp  DistributionMetrics
 	threat DistributionMetrics
 	dtps   DistributionMetrics
@@ -203,7 +203,7 @@ func (tam *TargetedActionMetrics) ToProto() *proto.TargetedActionMetrics {
 
 func NewUnitMetrics() UnitMetrics {
 	return UnitMetrics{
-		dps:     NewDistributionMetrics(),
+		Dps:     NewDistributionMetrics(),
 		dpasp:   NewDistributionMetrics(),
 		threat:  NewDistributionMetrics(),
 		dtps:    NewDistributionMetrics(),
@@ -335,7 +335,7 @@ func (unitMetrics *UnitMetrics) addSpellMetrics(spell *Spell, actionID ActionID,
 		target.Metrics.dtps.Total += spellTargetMetrics.TotalDamage
 
 		if spell.Unit.IsOpponent(target) {
-			unitMetrics.dps.Total += spellTargetMetrics.TotalDamage
+			unitMetrics.Dps.Total += spellTargetMetrics.TotalDamage
 			unitMetrics.threat.Total += spellTargetMetrics.TotalThreat
 		} else {
 			unitMetrics.hps.Total += spellTargetMetrics.TotalHealing + spellTargetMetrics.TotalShielding
@@ -345,9 +345,9 @@ func (unitMetrics *UnitMetrics) addSpellMetrics(spell *Spell, actionID ActionID,
 
 // This should be called at the end of each iteration, to include metrics from Pets in
 // those of their owner.
-// Assumes that doneIteration() has already been called on the pet metrics.
+// Assumes that DoneIteration() has already been called on the pet metrics.
 func (unitMetrics *UnitMetrics) AddFinalPetMetrics(petMetrics *UnitMetrics) {
-	unitMetrics.dps.Total += petMetrics.dps.Total
+	unitMetrics.Dps.Total += petMetrics.Dps.Total
 }
 
 func (unitMetrics *UnitMetrics) AddOOMTime(sim *Simulation, dur time.Duration) {
@@ -367,7 +367,7 @@ func (unitMetrics *UnitMetrics) UpdateDpasp(dpspSeconds float64) {
 }
 
 func (unitMetrics *UnitMetrics) reset() {
-	unitMetrics.dps.reset()
+	unitMetrics.Dps.reset()
 	unitMetrics.dpasp.reset()
 	unitMetrics.threat.reset()
 	unitMetrics.dtps.reset()
@@ -412,7 +412,7 @@ func (unitMetrics *UnitMetrics) doneIteration(unit *Unit, sim *Simulation) {
 		unitMetrics.tmi.Total *= sim.Duration.Seconds()
 	}
 
-	unitMetrics.dps.doneIteration(sim)
+	unitMetrics.Dps.doneIteration(sim)
 	unitMetrics.dpasp.doneIteration(sim)
 	unitMetrics.threat.doneIteration(sim)
 	unitMetrics.dtps.doneIteration(sim)
@@ -500,9 +500,9 @@ func (unitMetrics *UnitMetrics) calculateTMI(unit *Unit, sim *Simulation) float6
 }
 
 func (unitMetrics *UnitMetrics) ToProto() *proto.UnitMetrics {
-	n := float64(unitMetrics.dps.n)
+	n := float64(unitMetrics.Dps.n)
 	protoMetrics := &proto.UnitMetrics{
-		Dps:           unitMetrics.dps.ToProto(),
+		Dps:           unitMetrics.Dps.ToProto(),
 		Dpasp:         unitMetrics.dpasp.ToProto(),
 		Threat:        unitMetrics.threat.ToProto(),
 		Dtps:          unitMetrics.dtps.ToProto(),

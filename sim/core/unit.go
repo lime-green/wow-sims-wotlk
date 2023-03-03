@@ -477,7 +477,7 @@ func (unit *Unit) doneIteration(sim *Simulation) {
 
 	unit.auraTracker.doneIteration(sim)
 	for _, spell := range unit.Spellbook {
-		spell.doneIteration()
+		spell.DoneIteration()
 	}
 }
 

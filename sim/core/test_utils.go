@@ -215,7 +215,7 @@ func RaidSimTest(label string, t *testing.T, rsr *proto.RaidSimRequest, expected
 		if rsr.SimOptions.Debug {
 			log.Printf("LOGS:\n%s\n", result.Logs)
 		}
-		t.Fatalf("%s failed: expected %0f dps from sim but was %0f", label, expectedDps, result.RaidMetrics.Dps.Avg)
+		t.Fatalf("%s failed: expected %0f Dps from sim but was %0f", label, expectedDps, result.RaidMetrics.Dps.Avg)
 	}
 }
 

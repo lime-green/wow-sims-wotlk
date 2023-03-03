@@ -82,7 +82,7 @@ func (party *Party) reset(sim *Simulation) {
 func (party *Party) doneIteration(sim *Simulation) {
 	for _, agent := range party.Players {
 		agent.GetCharacter().doneIteration(sim)
-		party.dpsMetrics.Total += agent.GetCharacter().Metrics.dps.Total
+		party.dpsMetrics.Total += agent.GetCharacter().Metrics.Dps.Total
 		party.hpsMetrics.Total += agent.GetCharacter().Metrics.hps.Total
 	}
 

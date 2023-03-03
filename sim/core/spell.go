@@ -353,7 +353,7 @@ func (spell *Spell) SetMetricsSplit(splitIdx int32) {
 	spell.ActionID.Tag = splitIdx
 }
 
-func (spell *Spell) doneIteration() {
+func (spell *Spell) DoneIteration() {
 	if spell.Flags.Matches(SpellFlagNoMetrics) {
 		return
 	}

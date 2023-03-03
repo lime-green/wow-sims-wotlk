@@ -14,7 +14,13 @@ type Agent interface {
 type BaseAgent struct{}
 
 func (base *BaseAgent) Wait(duration int, session *Session) Response {
-	session.sim.Advance(time.Duration(duration) * time.Millisecond)
-	session.sim.RunPendingActions(session.sim.CurrentTime)
+	newTime := session.sim.CurrentTime + time.Duration(duration)*time.Millisecond
+	session.sim.RunPendingActions(newTime)
+	session.sim.Advance(newTime - session.sim.CurrentTime)
+
+	if session.sim.CurrentTime >= session.sim.Duration {
+		session.sim.Stop()
+	}
+
 	return Response{Success: true}
 }

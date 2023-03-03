@@ -48,7 +48,7 @@ func RunSim(rsr *proto.RaidSimRequest, progress chan *proto.ProgressMetrics) (re
 
 func CreateSim(rsr *proto.RaidSimRequest) *Simulation {
 	sim := NewSim(rsr)
-	sim.setup()
+	sim.setup(false)
 	return sim
 }
 
@@ -244,7 +244,7 @@ func (sim *Simulation) reset() {
 	sim.initManaTickAction()
 }
 
-func (sim *Simulation) setup() {
+func (sim *Simulation) setup(debug bool) {
 	for _, target := range sim.Encounter.Targets {
 		target.init(sim)
 	}
@@ -262,9 +262,11 @@ func (sim *Simulation) setup() {
 
 	sim.reset()
 
-	sim.Options.Debug = true
-	sim.Log = func(message string, vals ...interface{}) {
-		fmt.Printf(fmt.Sprintf("[%0.1f] "+message+"\n", append([]interface{}{sim.CurrentTime.Seconds()}, vals...)...))
+	if debug {
+		sim.Options.Debug = true
+		sim.Log = func(message string, vals ...interface{}) {
+			fmt.Printf(fmt.Sprintf("[%0.1f] "+message+"\n", append([]interface{}{sim.CurrentTime.Seconds()}, vals...)...))
+		}
 	}
 }
 
@@ -417,6 +419,28 @@ func (sim *Simulation) Start() {
 	}
 }
 
+func (sim *Simulation) Stop() {
+	sim.runPendingActions(NeverExpires)
+
+	sim.CurrentTime = sim.Duration
+
+	for _, pa := range sim.pendingActions {
+		if pa.CleanUp != nil {
+			pa.CleanUp(sim)
+		}
+	}
+
+	sim.Raid.doneIteration(sim)
+	sim.Encounter.doneIteration(sim)
+
+	for _, unit := range sim.Raid.AllUnits {
+		unit.Metrics.doneIteration(unit, sim)
+	}
+	for _, target := range sim.Encounter.Targets {
+		target.Metrics.doneIteration(&target.Unit, sim)
+	}
+}
+
 // RunOnce is the main event loop. It will run the simulation for number of seconds.
 func (sim *Simulation) runOnce() {
 	sim.reset()
@@ -446,7 +470,7 @@ func (sim *Simulation) runOnce() {
 
 	// The last event loop will leave CurrentTime at some value close to but not
 	// quite at the Duration. Explicitly set this so that accesses to CurrentTime
-	// during the doneIteration phase will return the Duration value, which is
+	// during the DoneIteration phase will return the Duration value, which is
 	// intuitive.
 	sim.CurrentTime = sim.Duration
 
@@ -556,7 +580,7 @@ func (sim *Simulation) GetRemainingDuration() time.Duration {
 			return sim.Duration - sim.CurrentTime
 		}
 
-		// Estimate time remaining via avg dps
+		// Estimate time remaining via avg Dps
 		dps := sim.Encounter.DamageTaken / sim.CurrentTime.Seconds()
 		dur := time.Duration((sim.Encounter.EndFightAtHealth-sim.Encounter.DamageTaken)/dps) * time.Second
 		return dur

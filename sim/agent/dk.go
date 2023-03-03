@@ -177,16 +177,18 @@ func (dpsDeathknightAgent *DpsDeathknightAgent) GetState(session *Session) Respo
 		}
 
 		abilityCD := spell.TimeToReady(session.sim).Milliseconds()
-		gcdCost := spell.DefaultCast.GCD.Milliseconds()
+		gcdCost := spell.DefaultCast.GCD
 
 		if !spell.IgnoreHaste {
-			gcdCost = spell.Unit.ApplyCastSpeed(spell.DefaultCast.GCD).Milliseconds()
+			gcdCost = spell.Unit.ApplyCastSpeed(spell.DefaultCast.GCD)
 		}
+
+		gcdCost = core.MaxDuration(gcdCost, core.GCDMin)
 
 		abilityCDs = append(abilityCDs, map[string]interface{}{
 			"name":        spellName,
 			"cdRemaining": abilityCD,
-			"gcdCost":     gcdCost,
+			"gcdCost":     gcdCost.Milliseconds(),
 			"canCast":     spell.CanCast(session.sim, target),
 		})
 	}
@@ -236,6 +238,15 @@ func (dpsDeathknightAgent *DpsDeathknightAgent) GetState(session *Session) Respo
 
 	gcdRemaining := dk.GCD.TimeToReady(session.sim).Milliseconds()
 
+	for _, spell := range dk.Spellbook {
+		// populate metrics
+		spell.DoneIteration()
+	}
+
+	durationSeconds := session.sim.Duration.Seconds()
+	timeRemaining := session.sim.GetRemainingDuration().Milliseconds()
+	dps := dk.Metrics.Dps.Total / durationSeconds
+
 	return Response{
 		Success: true,
 		Body: map[string]interface{}{
@@ -247,9 +258,11 @@ func (dpsDeathknightAgent *DpsDeathknightAgent) GetState(session *Session) Respo
 			"runeGraces":    runeGraces,
 			"currentTime":   session.sim.CurrentTime.Milliseconds(),
 			"buffs":         auraStates,
-			"timeRemaining": session.sim.GetRemainingDuration().Milliseconds(),
+			"timeRemaining": timeRemaining,
 			"abilities":     abilityCDs,
 			"debuffs":       debuffs,
+			"dps":           dps,
+			"isDone":        timeRemaining <= 0,
 		},
 	}
 }
