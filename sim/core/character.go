@@ -368,6 +368,10 @@ func (character *Character) AddPartyBuffs(partyBuffs *proto.PartyBuffs) {
 	}
 }
 
+func (character *Character) ClearGCDAction() {
+	character.gcdAction = nil
+}
+
 func (character *Character) initialize(agent Agent) {
 	character.majorCooldownManager.initialize(character)
 

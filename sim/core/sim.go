@@ -46,6 +46,12 @@ func RunSim(rsr *proto.RaidSimRequest, progress chan *proto.ProgressMetrics) (re
 	return runSim(rsr, progress, false)
 }
 
+func CreateSim(rsr *proto.RaidSimRequest) *Simulation {
+	sim := NewSim(rsr)
+	sim.setup()
+	return sim
+}
+
 func runSim(rsr *proto.RaidSimRequest, progress chan *proto.ProgressMetrics, skipPresim bool) (result *proto.RaidSimResult) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -238,6 +244,34 @@ func (sim *Simulation) reset() {
 	sim.initManaTickAction()
 }
 
+func (sim *Simulation) setup() {
+	for _, target := range sim.Encounter.Targets {
+		target.init(sim)
+	}
+
+	for _, party := range sim.Raid.Parties {
+		for _, player := range party.Players {
+			character := player.GetCharacter()
+			character.init(sim, player)
+
+			for _, petAgent := range character.Pets {
+				petAgent.GetCharacter().init(sim, petAgent)
+			}
+		}
+	}
+
+	sim.reset()
+
+	sim.Options.Debug = true
+	sim.Log = func(message string, vals ...interface{}) {
+		fmt.Printf(fmt.Sprintf("[%0.1f] "+message+"\n", append([]interface{}{sim.CurrentTime.Seconds()}, vals...)...))
+	}
+}
+
+func (sim *Simulation) GetPlayer() Agent {
+	return sim.Raid.Parties[0].Players[0]
+}
+
 // Run runs the simulation for the configured number of iterations, and
 // collects all the metrics together.
 func (sim *Simulation) run() *proto.RaidSimResult {
@@ -317,6 +351,10 @@ func (sim *Simulation) run() *proto.RaidSimResult {
 	return result
 }
 
+func (sim *Simulation) RunPendingActions(max time.Duration) {
+	sim.runPendingActions(max)
+}
+
 func (sim *Simulation) runPendingActions(max time.Duration) {
 	for {
 		if len(sim.pendingActions) == 0 {
@@ -353,6 +391,29 @@ func (sim *Simulation) runPendingActions(max time.Duration) {
 			continue // pa was cancelled during the advance.
 		}
 		pa.OnAction(sim)
+	}
+}
+
+func (sim *Simulation) Start() {
+	if len(sim.Environment.prepullActions) > 0 {
+		sim.CurrentTime = sim.Environment.prepullActions[0].DoAt
+
+		for _, prepullAction := range sim.Environment.prepullActions {
+			if prepullAction.DoAt > sim.CurrentTime {
+				sim.runPendingActions(prepullAction.DoAt)
+				sim.advance(prepullAction.DoAt - sim.CurrentTime)
+			}
+			prepullAction.Action(sim)
+		}
+
+		if sim.CurrentTime < 0 {
+			sim.runPendingActions(0)
+			sim.advance(0 - sim.CurrentTime)
+		}
+	}
+
+	for _, unit := range sim.Environment.AllUnits {
+		unit.startPull(sim)
 	}
 }
 
@@ -429,6 +490,10 @@ func (sim *Simulation) AddPendingAction(pa *PendingAction) {
 	//	sim.Log("Adding action at end for time %s", pa.NextActionAt)
 	//}
 	sim.pendingActions = append(sim.pendingActions, pa)
+}
+
+func (sim *Simulation) Advance(elapsedTime time.Duration) {
+	sim.advance(elapsedTime)
 }
 
 // Advance moves time forward counting down auras, CDs, mana regen, etc

@@ -437,6 +437,10 @@ func (at *auraTracker) RegisterResetEffect(resetEffect ResetEffect) {
 	at.resetEffects = append(at.resetEffects, resetEffect)
 }
 
+func (at *auraTracker) GetActiveAuras() []*Aura {
+	return at.activeAuras
+}
+
 func (at *auraTracker) init(sim *Simulation) {
 	// Auras are initialized later, on their first reset().
 }

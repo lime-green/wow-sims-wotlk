@@ -127,8 +127,9 @@ type Spell struct {
 
 	resultCache SpellResult
 
-	dots   DotArray
-	aoeDot *Dot
+	dots        DotArray
+	aoeDot      *Dot
+	IgnoreHaste bool
 }
 
 func (unit *Unit) OnSpellRegistered(handler SpellRegisteredHandler) {
@@ -184,6 +185,7 @@ func (unit *Unit) RegisterSpell(config SpellConfig) *Spell {
 		FlatThreatBonus:  config.FlatThreatBonus,
 
 		splitSpellMetrics: make([][]SpellMetrics, MaxInt(1, config.MetricSplits)),
+		IgnoreHaste:       config.Cast.IgnoreHaste,
 	}
 
 	if (spell.DamageMultiplier != 0 || spell.ThreatMultiplier != 0) && spell.ProcMask == ProcMaskUnknown {

@@ -33,11 +33,11 @@ func (unit *Unit) NextGCDAt() time.Duration {
 }
 
 func (unit *Unit) SetGCDTimer(sim *Simulation, gcdReadyAt time.Duration) {
+	unit.GCD.Set(gcdReadyAt)
+
 	if unit.gcdAction == nil {
 		return
 	}
-
-	unit.GCD.Set(gcdReadyAt)
 
 	if unit.gcdAction.consumed {
 		unit.gcdAction.cancelled = false
