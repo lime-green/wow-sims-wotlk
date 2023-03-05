@@ -298,6 +298,25 @@ func (unit *Unit) NewFocusMetrics(actionID ActionID) *ResourceMetrics {
 	return unit.Metrics.NewResourceMetrics(actionID, proto.ResourceType_ResourceTypeFocus)
 }
 
+func (unitMetrics *UnitMetrics) CalculateDamage(spell *Spell, actionID ActionID, spellMetrics []SpellMetrics) (damage float64) {
+	actionMetrics, ok := unitMetrics.actions[actionID]
+
+	if !ok {
+		actionMetrics = &ActionMetrics{IsMelee: spell.Flags.Matches(SpellFlagMeleeMetrics)}
+		unitMetrics.actions[actionID] = actionMetrics
+	}
+
+	for i, spellTargetMetrics := range spellMetrics {
+		target := spell.Unit.AttackTables[i].Defender
+
+		if spell.Unit.IsOpponent(target) {
+			damage += spellTargetMetrics.TotalDamage
+		}
+	}
+
+	return damage
+}
+
 // Adds the results of a spell to the character metrics.
 func (unitMetrics *UnitMetrics) addSpellMetrics(spell *Spell, actionID ActionID, spellMetrics []SpellMetrics) {
 	actionMetrics, ok := unitMetrics.actions[actionID]

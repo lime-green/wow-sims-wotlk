@@ -5,6 +5,7 @@ import (
 	"github.com/wowsims/wotlk/sim/deathknight/dps"
 	"log"
 	"strings"
+	"time"
 )
 
 type DpsDeathknightAgent struct {
@@ -40,7 +41,6 @@ func (dpsDeathknightAgent *DpsDeathknightAgent) Init(session *Session) {
 
 }
 func (dpsDeathknightAgent *DpsDeathknightAgent) Cast(spell string, session *Session) Response {
-	log.Println("Casting spell: ", spell)
 	dk := dpsDeathknightAgent.simAgent
 	target := dk.CurrentTarget
 
@@ -60,7 +60,13 @@ func (dpsDeathknightAgent *DpsDeathknightAgent) Cast(spell string, session *Sess
 		canCast = Spell.CanCast(session.sim, target)
 	}
 
+	//if !canCast {
+	//	log.Println("Unable to cast spell: ", spell)
+	//	return Response{Success: false}
+	//}
+
 	if canCast {
+		log.Println("Casting spell: ", spell)
 		Spell.Cast(session.sim, dk.CurrentTarget)
 		castHit = dk.LastOutcome.Matches(core.OutcomeLanded)
 	}
@@ -84,8 +90,8 @@ var defaultRuneTypes = []string{
 }
 
 var debuffsToTrack = []string{
-	"Blood Plague",
-	"Frost Fever",
+	"BloodPlague",
+	"FrostFever",
 }
 
 var buffsToTrack = []string{
@@ -237,15 +243,16 @@ func (dpsDeathknightAgent *DpsDeathknightAgent) GetState(session *Session) Respo
 	}
 
 	gcdRemaining := dk.GCD.TimeToReady(session.sim).Milliseconds()
+	var damage float64 = 0
 
 	for _, spell := range dk.Spellbook {
 		// populate metrics
-		spell.DoneIteration()
+		damage += spell.CalculateDamage()
 	}
 
-	durationSeconds := session.sim.Duration.Seconds()
+	durationSeconds := core.MaxDuration(time.Second, session.sim.CurrentTime).Seconds()
 	timeRemaining := session.sim.GetRemainingDuration().Milliseconds()
-	dps := dk.Metrics.Dps.Total / durationSeconds
+	dps := damage / durationSeconds
 
 	return Response{
 		Success: true,

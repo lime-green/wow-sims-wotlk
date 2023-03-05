@@ -353,6 +353,22 @@ func (spell *Spell) SetMetricsSplit(splitIdx int32) {
 	spell.ActionID.Tag = splitIdx
 }
 
+func (spell *Spell) CalculateDamage() (damage float64) {
+	if spell.Flags.Matches(SpellFlagNoMetrics) {
+		return 0
+	}
+
+	if len(spell.splitSpellMetrics) == 1 {
+		damage += spell.Unit.Metrics.CalculateDamage(spell, spell.ActionID, spell.SpellMetrics)
+	} else {
+		for i, spellMetrics := range spell.splitSpellMetrics {
+			damage += spell.Unit.Metrics.CalculateDamage(spell, spell.ActionID.WithTag(int32(i)), spellMetrics)
+		}
+	}
+
+	return damage
+}
+
 func (spell *Spell) DoneIteration() {
 	if spell.Flags.Matches(SpellFlagNoMetrics) {
 		return

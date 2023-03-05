@@ -12,7 +12,6 @@ import (
 	"net"
 	"os"
 	"reflect"
-	"time"
 )
 
 func main() {
@@ -42,11 +41,6 @@ func main() {
 		}
 
 		log.Println("Connection established from ", conn.RemoteAddr().String())
-		err = conn.SetDeadline(time.Now().Add(time.Second * 10))
-		if err != nil {
-			log.Println("Error setting deadline:", err.Error())
-			continue
-		}
 
 		go handleRequest(conn)
 	}
@@ -194,7 +188,7 @@ func handleRequest(conn net.Conn) {
 			return
 		}
 
-		log.Println("Message Received:", requestBody)
+		//log.Println("Message Received:", requestBody)
 		responseBody := Response{Success: false}
 
 		if handler, ok := handlers[requestBody.Command]; ok {
