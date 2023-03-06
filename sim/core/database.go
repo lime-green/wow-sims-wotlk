@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/wowsims/wotlk/sim/core/proto"
 	"github.com/wowsims/wotlk/sim/core/stats"
@@ -13,8 +14,14 @@ var WITH_DB = false
 var ItemsByID = map[int32]Item{}
 var GemsByID = map[int32]Gem{}
 var EnchantsByEffectID = map[int32]Enchant{}
+var mutex = &sync.Mutex{}
 
 func addToDatabase(newDB *proto.SimDatabase) {
+	// create mutex lock here and lock it
+	// defer unlock it
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	for _, v := range newDB.Items {
 		if _, ok := ItemsByID[v.Id]; !ok {
 			item := ItemFromProto(v)
