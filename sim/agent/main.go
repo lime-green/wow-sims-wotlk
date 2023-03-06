@@ -10,18 +10,12 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"log"
 	"net"
-	"net/http"
 	"os"
 	"reflect"
 )
-import _ "net/http/pprof"
 
 func main() {
 	socket := "/tmp/sim-agent.sock"
-
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
 
 	// remove socket if it exists
 	_, err := os.Stat(socket)
@@ -46,6 +40,7 @@ func main() {
 		}
 	}()
 
+	sim.RegisterAll()
 	log.Println("Listening on " + socket)
 
 	for {
@@ -109,7 +104,6 @@ func startSimHandler(request *Request, session *Session) Response {
 		return Response{Success: false}
 	}
 
-	sim.RegisterAll()
 	session.sim = core.CreateSim(raidSimRequestProto)
 	session.sim.Start()
 

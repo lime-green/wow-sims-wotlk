@@ -270,6 +270,7 @@ func (dpsDeathknightAgent *DpsDeathknightAgent) GetState(session *Session) Respo
 			"debuffs":       debuffs,
 			"dps":           dps,
 			"isDone":        timeRemaining <= 0,
+			"totalDamage":   damage,
 		},
 	}
 }
