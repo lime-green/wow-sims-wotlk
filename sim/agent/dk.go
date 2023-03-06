@@ -66,7 +66,7 @@ func (dpsDeathknightAgent *DpsDeathknightAgent) Cast(spell string, session *Sess
 	//}
 
 	if canCast {
-		log.Println("Casting spell: ", spell)
+		//log.Println("Casting spell: ", spell)
 		Spell.Cast(session.sim, dk.CurrentTarget)
 		castHit = dk.LastOutcome.Matches(core.OutcomeLanded)
 	}

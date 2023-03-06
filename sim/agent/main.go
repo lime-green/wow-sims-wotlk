@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/binary"
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"github.com/wowsims/wotlk/sim"
 	"github.com/wowsims/wotlk/sim/core"
 	"github.com/wowsims/wotlk/sim/core/proto"
@@ -10,14 +10,29 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"reflect"
 )
+import _ "net/http/pprof"
 
 func main() {
-	port := os.Args[1]
+	socket := "/tmp/sim-agent.sock"
 
-	l, err := net.Listen("tcp", ":"+port)
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
+	// remove socket if it exists
+	_, err := os.Stat(socket)
+	if err == nil {
+		err = os.Remove(socket)
+		if err != nil {
+			log.Println("Error removing socket:", err.Error())
+			os.Exit(1)
+		}
+	}
+	l, err := net.Listen("unix", "/tmp/sim-agent.sock")
 	if err != nil {
 		log.Println("Error listening:", err.Error())
 		os.Exit(1)
@@ -31,7 +46,7 @@ func main() {
 		}
 	}()
 
-	log.Println("Listening on " + port)
+	log.Println("Listening on " + socket)
 
 	for {
 		conn, err := l.Accept()
@@ -152,11 +167,13 @@ func handleRequest(conn net.Conn) {
 		}
 	}()
 
-	buf := make([]byte, 1024*1024)
+	readBuffer := make([]byte, 1024*20)
+	writeBuffer := make([]byte, 1024*5)
 	session := &Session{}
 
 	for {
-		size, err := conn.Read(buf)
+		size, err := conn.Read(readBuffer)
+
 		if err != nil {
 			if err.Error() == "EOF" {
 				log.Println("Connection closed by client")
@@ -174,14 +191,26 @@ func handleRequest(conn net.Conn) {
 
 		// Read 4 bytes from the buffer and convert to an int
 		// This is the length of the message
-		msgLen := int(binary.LittleEndian.Uint32(buf[:4]))
-		if msgLen != size-4 {
-			log.Println("Wrong size, expected ", msgLen, " bytes not ", size)
-			return
+		msgLen := int(binary.LittleEndian.Uint32(readBuffer[:4]))
+
+		currentSize := size
+		// keep reading until we have the full message
+		for currentSize < msgLen+4 {
+			size, err = conn.Read(readBuffer[size:])
+			currentSize += size
+
+			if err != nil {
+				log.Println("Error reading:", err.Error())
+				return
+			}
 		}
+		//if msgLen != size-4 {
+		//	log.Println("Wrong size, expected ", msgLen, " bytes not ", size)
+		//	return
+		//}
 
 		requestBody := &Request{}
-		err = json.Unmarshal(buf[4:msgLen+4], &requestBody)
+		err = json.Unmarshal(readBuffer[4:msgLen+4], &requestBody)
 
 		if err != nil {
 			log.Println("Error unmarshalling:", err.Error())
@@ -205,17 +234,10 @@ func handleRequest(conn net.Conn) {
 		}
 
 		// Write the length of the message to the buffer
-		binary.LittleEndian.PutUint32(buf, uint32(len(response)))
+		binary.LittleEndian.PutUint32(writeBuffer, uint32(len(response)))
+		copy(writeBuffer[4:], response)
 
-		// Write the length of the message to the connection
-		_, err = conn.Write(buf[:4])
-		if err != nil {
-			log.Println("Error writing:", err.Error())
-			return
-		}
-
-		// Write the message to the connection
-		_, err = conn.Write(response)
+		_, err = conn.Write(writeBuffer[:len(response)+4])
 		if err != nil {
 			log.Println("Error writing:", err.Error())
 			return
