@@ -121,6 +121,20 @@ dps_results: {
  }
 }
 dps_results: {
+ key: "TestBM-AllItems-BlackBruise-50035"
+ value: {
+  dps: 6098.63354
+  tps: 4051.72199
+ }
+}
+dps_results: {
+ key: "TestBM-AllItems-BlackBruise-50692"
+ value: {
+  dps: 6088.06013
+  tps: 4043.89096
+ }
+}
+dps_results: {
  key: "TestBM-AllItems-BlessedGarboftheUndeadSlayer"
  value: {
   dps: 5251.67971
@@ -144,15 +158,15 @@ dps_results: {
 dps_results: {
  key: "TestBM-AllItems-Bryntroll,theBoneArbiter-50415"
  value: {
-  dps: 6636.179
-  tps: 4522.59313
+  dps: 6436.40712
+  tps: 4322.9046
  }
 }
 dps_results: {
  key: "TestBM-AllItems-Bryntroll,theBoneArbiter-50709"
  value: {
-  dps: 6642.79077
-  tps: 4529.1498
+  dps: 6436.40712
+  tps: 4322.9046
  }
 }
 dps_results: {

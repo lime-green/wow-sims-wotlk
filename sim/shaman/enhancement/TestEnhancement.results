@@ -114,6 +114,20 @@ dps_results: {
  }
 }
 dps_results: {
+ key: "TestEnhancement-AllItems-BlackBruise-50035"
+ value: {
+  dps: 7005.28903
+  tps: 3896.89563
+ }
+}
+dps_results: {
+ key: "TestEnhancement-AllItems-BlackBruise-50692"
+ value: {
+  dps: 7066.25053
+  tps: 3929.62724
+ }
+}
+dps_results: {
  key: "TestEnhancement-AllItems-BlessedGarboftheUndeadSlayer"
  value: {
   dps: 5659.54475
@@ -811,15 +825,15 @@ dps_results: {
 dps_results: {
  key: "TestEnhancement-AllItems-TinyAbominationinaJar-50351"
  value: {
-  dps: 7157.05642
-  tps: 4016.69633
+  dps: 7174.5309
+  tps: 4026.27078
  }
 }
 dps_results: {
  key: "TestEnhancement-AllItems-TinyAbominationinaJar-50706"
  value: {
-  dps: 7146.43068
-  tps: 4002.42685
+  dps: 7193.70487
+  tps: 4034.44902
  }
 }
 dps_results: {
@@ -848,6 +862,13 @@ dps_results: {
  value: {
   dps: 7318.88794
   tps: 4112.47545
+ }
+}
+dps_results: {
+ key: "TestEnhancement-AllItems-TotemofQuakingEarth-47667"
+ value: {
+  dps: 7251.76789
+  tps: 4054.67774
  }
 }
 dps_results: {

@@ -15,7 +15,6 @@ func (warlock *Warlock) registerSeedSpell() {
 		ProcMask:    core.ProcMaskSpellDamage,
 
 		BonusCritRating: 0 +
-			warlock.masterDemonologistShadowCrit +
 			float64(warlock.Talents.ImprovedCorruption)*core.CritRatingPerCritChance,
 		DamageMultiplierAdditive: 1 +
 			warlock.GrandFirestoneBonus() +
@@ -26,15 +25,15 @@ func (warlock *Warlock) registerSeedSpell() {
 
 		ApplyEffects: func(sim *core.Simulation, target *core.Unit, spell *core.Spell) {
 			dmgFromSP := 0.2129 * spell.SpellPower()
-			for _, aoeTarget := range sim.Encounter.Targets {
+			for _, aoeTarget := range sim.Encounter.TargetUnits {
 				// Seeded target is not affected by explosion.
-				if &aoeTarget.Unit == target {
+				if aoeTarget == target {
 					continue
 				}
 
 				baseDamage := sim.Roll(1633, 1897) + dmgFromSP
 				baseDamage *= sim.Encounter.AOECapMultiplier()
-				spell.CalcAndDealDamage(sim, &aoeTarget.Unit, baseDamage, spell.OutcomeMagicHitAndCrit)
+				spell.CalcAndDealDamage(sim, aoeTarget, baseDamage, spell.OutcomeMagicHitAndCrit)
 			}
 		},
 	})

@@ -98,7 +98,7 @@ func (cat *FeralDruid) checkReplaceMaul(sim *core.Simulation) *core.Spell {
 		lacerateNext = !lacerateDot.IsActive() || (lacerateDot.GetStacks() < 5) || (lacerateDot.RemainingDuration(sim) <= lacerateLeeway)
 		emergencyLeeway := gcdTimeToRdy + (3 * time.Second) + (2 * cat.latency)
 		emergencyLacerateNext = lacerateDot.IsActive() && (lacerateDot.RemainingDuration(sim) <= emergencyLeeway)
-		mangleNext = cat.MangleBear != nil && !lacerateNext && (!cat.bleedAura.IsActive() || (cat.bleedAura.RemainingDuration(sim) < gcdTimeToRdy+time.Second*3))
+		mangleNext = cat.MangleBear != nil && !lacerateNext && (!cat.bleedAura.IsActive() || (cat.bleedAura.RemainingDuration(sim) < gcdTimeToRdy+time.Second*3) || (sim.CurrentTime-cat.lastShift < time.Duration(1500*time.Millisecond)))
 	} else {
 		mangleNext = cat.MangleBear != nil && cat.MangleBear.TimeToReady(sim) < gcdTimeToRdy
 		lacerateNext = lacerateDot.IsActive() && (lacerateDot.GetStacks() < 5 || lacerateDot.RemainingDuration(sim) < gcdTimeToRdy+(time.Second*4))
@@ -138,6 +138,7 @@ func (cat *FeralDruid) shiftBearCat(sim *core.Simulation, powershift bool) bool 
 		toCat = !toCat
 	}
 
+	cat.lastShift = sim.CurrentTime
 	if toCat {
 		return cat.CatForm.Cast(sim, nil)
 	} else {
@@ -192,7 +193,7 @@ func (cat *FeralDruid) calcBuilderDpe(sim *core.Simulation) (float64, float64) {
 func (cat *FeralDruid) clipRoar(sim *core.Simulation) bool {
 	ripDot := cat.Rip.CurDot()
 	ripdotRemaining := ripDot.RemainingDuration(sim)
-	if !ripDot.IsActive() || (ripdotRemaining < 10*time.Second) {
+	if !ripDot.IsActive() || (sim.GetRemainingDuration()-ripdotRemaining < 10*time.Second) {
 		return false
 	}
 
@@ -345,7 +346,7 @@ func (cat *FeralDruid) doRotation(sim *core.Simulation) {
 		pendingActions = append(pendingActions, pendingAction{ripDot.ExpiresAt(), ripCost})
 		ripRefreshPending = true
 	}
-	if rakeDot.IsActive() && (rakeDot.RemainingDuration(sim) < simTimeRemain-(9*time.Second)) {
+	if rakeDot.IsActive() && (rakeDot.RemainingDuration(sim) < simTimeRemain-rakeDot.Duration) {
 		rakeCost := core.TernaryFloat64(cat.berserkExpectedAt(sim, rakeDot.ExpiresAt()), cat.Rake.DefaultCast.Cost*0.5, cat.Rake.DefaultCast.Cost)
 		pendingActions = append(pendingActions, pendingAction{rakeDot.ExpiresAt(), rakeCost})
 	}
@@ -602,7 +603,7 @@ func (cat *FeralDruid) doRotation(sim *core.Simulation) {
 		// after pooling in order to save the Lacerate. Instead, it is
 		// preferable to just Shred and bearweave early.
 		nextCastEnd := sim.CurrentTime + timeToNextAction + cat.latency + time.Second*2
-		ignorePooling := rotation.BearweaveType == proto.FeralDruid_Rotation_Lacerate && lacerateDot.IsActive() && (lacerateDot.ExpiresAt().Seconds()-1.5-latencySecs <= nextCastEnd.Seconds())
+		ignorePooling := cat.BerserkAura.IsActive() || (rotation.BearweaveType == proto.FeralDruid_Rotation_Lacerate && lacerateDot.IsActive() && (lacerateDot.ExpiresAt().Seconds()-1.5-latencySecs <= nextCastEnd.Seconds()))
 
 		if ignorePooling {
 			if curEnergy >= cat.CurrentShredCost() {
@@ -626,7 +627,7 @@ func (cat *FeralDruid) doRotation(sim *core.Simulation) {
 
 	// If Lacerateweaving, then also schedule an action just before Lacerate
 	// expires to ensure we can save it in time.
-	lacRefreshTime := lacerateDot.ExpiresAt() - (time.Duration(1.5*float64(time.Second) - float64(3*cat.latency*time.Second)))
+	lacRefreshTime := lacerateDot.ExpiresAt() - (1500 * time.Millisecond) - (3 * cat.latency * time.Second)
 	if rotation.BearweaveType == proto.FeralDruid_Rotation_Lacerate && lacerateDot.IsActive() && lacerateDot.RemainingDuration(sim) < sim.GetRemainingDuration() && (sim.CurrentTime < lacRefreshTime) {
 		nextAction = core.MinDuration(nextAction, lacRefreshTime)
 	}
@@ -676,7 +677,7 @@ func (cat *FeralDruid) setupRotation(rotation *proto.FeralDruid_Rotation) {
 		Powerbear:          rotation.Powerbear,
 		MinRoarOffset:      time.Duration(float64(rotation.MinRoarOffset) * float64(time.Second)),
 		RevitFreq:          15.0 / (8 * float64(rotation.HotUptime)),
-		LacerateTime:       10.0 * time.Second,
+		LacerateTime:       8.0 * time.Second,
 		SnekWeave:          core.Ternary(rotation.BearWeaveType == proto.FeralDruid_Rotation_None, false, rotation.SnekWeave),
 		FlowerWeave:        core.Ternary(rotation.BearWeaveType == proto.FeralDruid_Rotation_None, rotation.FlowerWeave, false),
 	}
