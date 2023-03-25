@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/wowsims/wotlk/sim/core"
+	"github.com/wowsims/wotlk/sim/core/proto"
 	"github.com/wowsims/wotlk/sim/deathknight/dps"
 	"log"
 	"strings"
@@ -243,10 +244,22 @@ func (dpsDeathknightAgent *DpsDeathknightAgent) GetState(session *Session) Respo
 	}
 
 	gcdRemaining := dk.GCD.TimeToReady(session.sim).Milliseconds()
-	var damage float64 = 0
+	var (
+		damage        float64 = 0
+		meleeDamage   float64 = 0
+		diseaseDamage float64 = 0
+		abilityDamage float64 = 0
+	)
 
 	for _, spell := range dk.Spellbook {
-		// populate metrics
+		if spell.OtherID == proto.OtherAction_OtherActionAttack {
+			meleeDamage += spell.CalculateDamage()
+		} else if spell.SpellID == 55095 || spell.SpellID == 55078 {
+			diseaseDamage += spell.CalculateDamage()
+		} else {
+			// anything other than melee or diseases is considered an ability
+			abilityDamage += spell.CalculateDamage()
+		}
 		damage += spell.CalculateDamage()
 	}
 
@@ -271,6 +284,13 @@ func (dpsDeathknightAgent *DpsDeathknightAgent) GetState(session *Session) Respo
 			"dps":           dps,
 			"isDone":        timeRemaining <= 0,
 			"totalDamage":   damage,
+			"runicPower":    uint8(dk.CurrentRunicPower()),
+			"abilityDamage": abilityDamage,
+			"abilityDPS":    abilityDamage / durationSeconds,
+			"meleeDamage":   meleeDamage,
+			"meleeDPS":      meleeDamage / durationSeconds,
+			"diseaseDamage": diseaseDamage,
+			"diseaseDPS":    diseaseDamage / durationSeconds,
 		},
 	}
 }
