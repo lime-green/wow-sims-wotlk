@@ -35,7 +35,7 @@ import {
 	Stat,
 } from './proto/common';
 
-import { IndividualSimSettings, SavedRotation, SavedTalents } from './proto/ui';
+import {IndividualSimSettings, SavedRotation, SavedTalents, SimSettings} from './proto/ui';
 import { StatWeightsResult } from './proto/api';
 
 import { Gear } from './proto_utils/gear';
@@ -488,8 +488,10 @@ export abstract class IndividualSimUI<SpecType extends Spec> extends SimUI {
 
 	toLink(): string {
 		const proto = this.toProto();
-		// When sharing links, people generally don't intend to share settings/ep weights.
-		proto.settings = undefined;
+		// When sharing links, people generally don't intend to share settings/ep weights, only save iteration count
+		const iterations = proto.settings?.iterations
+		proto.settings = SimSettings.create()
+		proto.settings.iterations = iterations || proto.settings.iterations
 		proto.epWeights = [];
 
 		const protoBytes = IndividualSimSettings.toBinary(proto);
