@@ -191,6 +191,17 @@ func (apl *APLRotation) DoNextAction(sim *Simulation) {
 	} else {
 		apl.unit.DoNothing()
 	}
+
+	if apl.unit.HasManaBar() {
+		manaThreshold := 1000.0
+		if i == 0 && apl.unit.currentMana < manaThreshold && !apl.unit.IsWaitingForMana() {
+			apl.unit.WaitForMana(sim, manaThreshold)
+		}
+
+		if i > 0 && apl.unit.IsWaitingForMana() {
+			apl.unit.DoneWaitingForMana(sim)
+		}
+	}
 }
 
 func (apl *APLRotation) getNextAction(sim *Simulation) *APLAction {
